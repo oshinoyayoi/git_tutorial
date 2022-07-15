@@ -1,106 +1,100 @@
-import { useState } from "react";
-import "./todo-styles/todo.styles.css";
-import TodoList from "./todo-styles/todoList.todo-styles";
+import React, { useState, useEffect, Fragment } from "react";
+import { useRef } from "react";
+import ListItem from "./ListItem";
+import Form from "./Form";
 
-const App = () => {
-  const [todos, setTodos] = useState([]);
-  const [tmpTodo, setTmpTodo] = useState("");
-  const [month, setMonth] = useState("");
-  const [day, setDay] = useState("");
+//Initial tasks
+const tasks = [
+  { name: "task 1", date: "11", done: false },
+  { name: "task 2", date: "11", done: false },
+  { name: "task 3", date: "11", done: true },
+];
 
-  const addTodo = () => {
-    // formの内容が空白の場合はalertを出す
-    if (tmpTodo === "") {
-      alert("文字を入力してください");
-      return;
-    }
-    setTodos([...todos, tmpTodo]);
-    setTmpTodo("");
+function TodoApp() {
+  const [todos, setTodos] = useState(tasks);
+  const [inputValue, setInputValue] = useState("");
+  const [date, setDate] = useState("");
+  const inputRef = useRef(null);
+
+  //useEffect works basically as componentDidMount and componentDidUpdate
+  useEffect(() => {
+    let count = 0;
+    todos.map((todo) => (!todo.done ? count++ : null));
+    document.title = `${count} task${count > 1 ? "s" : ""} todo`;
+  });
+  //
+
+  const handleNewDate = (e) => {
+    setDate(inputRef.current.value);
   };
 
-  const addMonth = () => {
-    setTodos([...todos, tmpTodo]);
-    setMonth("");
-  };
+  //
+  const _handleSubmit = (e) => {
+    e.preventDefault();
+    if (inputValue === "" || date === "") return alert("Task name is required");
 
-  const addDay = () => {
-    setTodos([...todos, tmpTodo]);
-    setDay("");
-  };
-
-  const addItem = () => {
-    const newTodoItem = {
-      tmpTodo: tmpTodo,
-      time: month + "/" + day,
-      id: todos.length + 1,
-    };
-    const list = [...todos];
-    list.push(newTodoItem);
-    setTodos(list);
-  };
-
-  // todoを削除する処理
-  const deleteTodo = (index) => {
-    const newTodos = todos.filter((todo, todoIndex) => {
-      return index !== todoIndex;
+    let newArr = [...todos];
+    newArr.push({
+      name: inputValue,
+      date: date,
+      done: false,
     });
-    setTodos(newTodos);
+    setTodos(newArr);
+    setInputValue("");
+
+    setDate("");
   };
 
+  //比较时间，并进行排序
+  const compareDate = () => {
+    todos.sort(function (a, b) {
+      return a.date - b.date;
+    });
+    setTodos([...todos]);
+  };
+
+  //
+  const _handleBntClick = ({ type, index }) => {
+    const newArr = todos.slice();
+    if (type === "remove") newArr.splice(index, 1);
+    else if (type === "completed") newArr[index].done = true;
+
+    return setTodos(newArr);
+  };
+
+  //
   return (
-    <>
-      <h1>Todo List</h1>
-      <div className="form">
-        <input
-          type="text"
-          name="todo"
-          placeholder="E.g. Feed the cat"
-          onChange={(e) => setTmpTodo(e.target.value)}
-          value={tmpTodo}
-        />
-        <input
-          name="months"
-          placeholder="month"
-          onChange={(addMonth) => setMonth(addMonth.target.value)}
-          value={month}
-        />
-        <input
-          name="days"
-          placeholder="day"
-          onChange={(addDay) => setDay(addDay.target.value)}
-          value={day}
-        />
-        <button onClick={addItem}>Add</button>
-        <TodoList items={todos} />
-      </div>
+    <Fragment>
+      <Form
+        onSubmit={_handleSubmit}
+        value={inputValue}
+        onChange={(e) => setInputValue(e.target.value)}
+      />
 
-      <ol>
-        {todos.map((todo, index) => {
-          return (
-            <li key={index}>
-              {todo}
-              {/* 削除ボタンを追加 */}
-              <button onClick={() => deleteTodo(index)}>Remove</button>
-            </li>
-          );
-        })}
-      </ol>
+      <input
+        ref={inputRef}
+        type="text"
+        value={date}
+        onChange={handleNewDate}
+        placeholder="Date"
+      />
 
-      <style>{`
-        h1 {
-          text-align: center;
-        }
-        .form {
-          display: flex;
-          justify-content: center;
-        }
-        ol {
-          width: 200px;
-          margin: 10px auto;
-        }
-      `}</style>
-    </>
+      <ul>
+        {todos.map((todo, index) => (
+          <ListItem
+            key={index}
+            todo={todo}
+            remove={() => _handleBntClick({ type: "remove", index })}
+            completed={() => _handleBntClick({ type: "completed", index })}
+          />
+        ))}
+      </ul>
+
+      <button type="submit" onClick={() => compareDate()}>
+        sort by time
+      </button>
+    </Fragment>
   );
-};
+}
 
-export default App;
+export default TodoApp;

@@ -45,7 +45,10 @@ function TodoApp() {
     };
     fetch("http://localhost:8080/todo", addTodos)
       .then((response) => response.json())
-      .then((result) => setTodos(result.data));
+      .then((result) => {
+        console.log(result.data);
+        setTodos(result.data);
+      });
   }
 
   //比较时间，并进行排序

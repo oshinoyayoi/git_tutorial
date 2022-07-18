@@ -1,13 +1,13 @@
 import React from "react";
 
 function ListItem(props) {
-  const { name, date, done } = props.todo;
+  const { task, date, status } = props.todo;
   return (
-    <li style={{ textDecoration: done ? "line-through" : "" }}>
-      <span>{name}</span>
+    <li style={{ textDecoration: status ? "line-through" : "" }}>
+      <span>{task}</span>
       <span> {date}</span>
 
-      {!done ? <button onClick={props.completed}>Completed</button> : ""}
+      {!status ? <button onClick={props.completed}>Toggle</button> : ""}
       <button onClick={props.remove}>Remove</button>
     </li>
   );

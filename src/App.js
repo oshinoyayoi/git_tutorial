@@ -1,49 +1,52 @@
 import React, { useState, useEffect, Fragment } from "react";
 import { useRef } from "react";
 import ListItem from "./ListItem";
-import Form from "./Form";
+import axios from "axios";
 
 //Initial tasks
 const tasks = [
-  { name: "task 1", date: "11", done: false },
-  { name: "task 2", date: "11", done: false },
-  { name: "task 3", date: "11", done: true },
+  { task: "task 1", date: "11", status: 1 },
+  { task: "task 2", date: "11", status: 1 },
+  { task: "task 3", date: "11", status: 0 },
 ];
 
 function TodoApp() {
   const [todos, setTodos] = useState(tasks);
-  const [inputValue, setInputValue] = useState("");
-  const [date, setDate] = useState("");
-  const inputRef = useRef(null);
+  const taskRef = useRef(null);
+  const dateRef = useRef(null);
+
+  //获取所有内容,get
+  useEffect(() => {
+    axios
+      .get("http://localhost:8080/todo")
+      .then((response) => response.data)
+      .then((result) => setTodos(result.data));
+  }, []);
 
   //useEffect works basically as componentDidMount and componentDidUpdate
   useEffect(() => {
     let count = 0;
-    todos.map((todo) => (!todo.done ? count++ : null));
+    todos.map((todo) => (!todo.status ? count++ : null));
     document.title = `${count} task${count > 1 ? "s" : ""} todo`;
   });
-  //
 
-  const handleNewDate = (e) => {
-    setDate(inputRef.current.value);
-  };
+  //post fetch
+  //增加,post
 
-  //
-  const _handleSubmit = (e) => {
-    e.preventDefault();
-    if (inputValue === "" || date === "") return alert("Task name is required");
-
-    let newArr = [...todos];
-    newArr.push({
-      name: inputValue,
-      date: date,
-      done: false,
-    });
-    setTodos(newArr);
-    setInputValue("");
-
-    setDate("");
-  };
+  function addTodo() {
+    const addTodos = {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        task: taskRef.current.value,
+        date: dateRef.current.value,
+        status: 0,
+      }),
+    };
+    fetch("http://localhost:8080/todo", addTodos)
+      .then((response) => response.json())
+      .then((result) => setTodos(result.data));
+  }
 
   //比较时间，并进行排序
   const compareDate = () => {
@@ -52,40 +55,50 @@ function TodoApp() {
     });
     setTodos([...todos]);
   };
-
-  //
+  /*
+  //remove and completed
   const _handleBntClick = ({ type, index }) => {
     const newArr = todos.slice();
     if (type === "remove") newArr.splice(index, 1);
-    else if (type === "completed") newArr[index].done = true;
+    else if (type === "completed") newArr[index].status = 0;
 
     return setTodos(newArr);
   };
+*/
+  const changeState = (taskId) => {
+    axios
+      .put("http://localhost:8080/todo")
+      .then((response) => {
+        console.log(setTodos(response.data));
+      })
+      .then(() => {
+        alert("Toggle update succeed!");
+      });
+  };
 
+  const deleteTodo = (taskId) => {
+    axios
+      .delete(`${"http://localhost:8080/todo"}/${taskId}`)
+      .then((response) => {
+        setTodos(response.data);
+      })
+      .then(() => {
+        alert("Deleted remove succeed!");
+      });
+  };
   //
   return (
     <Fragment>
-      <Form
-        onSubmit={_handleSubmit}
-        value={inputValue}
-        onChange={(e) => setInputValue(e.target.value)}
-      />
-
-      <input
-        ref={inputRef}
-        type="text"
-        value={date}
-        onChange={handleNewDate}
-        placeholder="Date"
-      />
-
+      <input ref={taskRef} type="text" placeholder="Ex.: Learn Java" />
+      <input ref={dateRef} type="text" placeholder="Date" />
+      <button onClick={addTodo}>Add</button>
       <ul>
         {todos.map((todo, index) => (
           <ListItem
             key={index}
             todo={todo}
-            remove={() => _handleBntClick({ type: "remove", index })}
-            completed={() => _handleBntClick({ type: "completed", index })}
+            remove={() => deleteTodo({ type: "remove", index })}
+            completed={() => changeState({ type: "completed", index })}
           />
         ))}
       </ul>
